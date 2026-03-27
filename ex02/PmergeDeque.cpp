@@ -118,14 +118,16 @@ std::deque<int> PmergeDeque::remapPend
 )
 {
     std::deque<int> new_pend(main_chain.size());
+    std::vector<bool> used(original_main.size(), false);
 
     for (size_t i = 0; i < main_chain.size(); i++)
     {
         for (size_t j = 0; j < original_main.size(); j++)
         {
-            if (original_main[j] == main_chain[i])
+            if (!used[j] && original_main[j] == main_chain[i])
             {
                 new_pend[i] = pend[j];
+                used[j] = true;
                 break;
             }
         }
@@ -162,8 +164,14 @@ void PmergeDeque::insertPend
             high = 2 * high + 1;
 
         int idx = order[k] - 1;
-        std::deque<int>::iterator highWinner = std::find(main_chain.begin(), main_chain.end(), winners[idx]);
-        int winnerPos = (int)(highWinner - main_chain.begin()) + 1;
+        int winnerPos;
+        if (idx < (int)winners.size())
+        {
+            std::deque<int>::iterator highWinner = std::find(main_chain.begin(), main_chain.end(), winners[idx]);
+            winnerPos = (int)(highWinner - main_chain.begin()) + 1;
+        }
+        else
+            winnerPos = (int)main_chain.size();
         int bound = std::min(high, winnerPos);
         int pos   = findInsertPos(main_chain, new_pend[idx], 0, bound, comparisons);
         main_chain.insert(main_chain.begin() + pos, new_pend[idx]);

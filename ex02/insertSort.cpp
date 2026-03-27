@@ -49,17 +49,19 @@ void Pmerge::insertPend(std::vector<int>& main_chain, const std::vector<int>& ne
     std::vector<int> order = buildInsertOrder(n);
 
     int high = 3;
-    int group = 2;
     for (size_t k = 0; k < order.size(); k++)
     {
         if (k > 0 && order[k] > order[k - 1])
-        {
-            group++;
-            high = (int)pow(2.0, group) - 1 ;
-        }
+            high = high * 2 + 1;
         int idx   = order[k] - 1; // convert to 0-indexed
-        std::vector<int>::iterator highWinner = std::find(main_chain.begin(), main_chain.end(), winners[idx]);  // winners + indx
-        int winnerPos = (int)(highWinner - main_chain.begin()) + 1 ; // one-past winner index
+        int winnerPos;
+        if (idx < (int)winners.size())
+        {
+            std::vector<int>::iterator highWinner = std::find(main_chain.begin(), main_chain.end(), winners[idx]);
+            winnerPos = (int)(highWinner - main_chain.begin() + 1);
+        }
+        else
+            winnerPos = (int)main_chain.size(); // straggler: no paired winner, search full chain
         int bound = std::min(high, winnerPos);
         int pos   = findInsertPos(main_chain, new_pend[idx], 0, bound, comparisons);
         main_chain.insert(main_chain.begin() + pos, new_pend[idx]);

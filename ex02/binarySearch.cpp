@@ -6,7 +6,7 @@
 /*   By: akoaik <akoaik@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/28 04:55:04 by akoaik            #+#    #+#             */
-/*   Updated: 2026/03/15 03:09:22 by akoaik           ###   ########.fr       */
+/*   Updated: 2026/03/27 20:01:30 by akoaik           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,15 +31,4 @@ int Pmerge::findInsertPos
             right = mid;
     }
     return left;
-}
-
-void Pmerge::binarySearch
-(
-    std::vector<int>&   arr,
-    int                 target
-)
-{
-    int dummy = 0;
-    int pos = findInsertPos(arr, target, 0, arr.size(), dummy);
-    arr.insert(arr.begin() + pos, target);
 }

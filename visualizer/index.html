@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ford-Johnson Sort · Visualizer</title>
+<style>
+@keyframes pulse {
+  0%,100% { transform:scaleY(1); }
+  50%      { transform:scaleY(1.06); filter:brightness(1.4); }
+}
+@keyframes glow {
+  0%,100% { box-shadow:0 0 6px currentColor; }
+  50%      { box-shadow:0 0 22px currentColor,0 0 40px currentColor; }
+}
+@keyframes slideIn {
+  from { opacity:0; transform:translateX(-18px) scaleY(0.7); }
+  to   { opacity:1; transform:translateX(0) scaleY(1); }
+}
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes bounceIn {
+  0%  { transform:scale(0.6); opacity:0; }
+  60% { transform:scale(1.12); opacity:1; }
+  80% { transform:scale(0.95); }
+  100%{ transform:scale(1); }
+}
+@keyframes spinBadge {
+  from { transform:rotate(0deg) scale(1); }
+  50%  { transform:rotate(180deg) scale(1.3); }
+  to   { transform:rotate(360deg) scale(1); }
+}
+@keyframes confettiFall {
+  0%   { transform:translateY(-10px) rotate(0deg); opacity:1; }
+  100% { transform:translateY(60px) rotate(720deg); opacity:0; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:#0f172a;
+  color:#e2e8f0;
+  min-height:100vh;
+}
+
+/* ── page gradient glow ── */
+body::before {
+  content:'';
+  position:fixed;
+  top:0;left:0;right:0;height:260px;
+  background:radial-gradient(ellipse at 50% -20%,rgba(99,102,241,.22) 0%,transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
+
+header {
+  text-align:center;
+  padding:36px 24px 18px;
+  position:relative;
+  z-index:1;
+}
+
+header h1 {
+  font-size:1.9rem;
+  font-weight:800;
+  letter-spacing:-0.5px;
+  background:linear-gradient(120deg,#4f46e5 0%,#7c3aed 45%,#0284c7 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+  background-size:200% auto;
+  animation:shimmer 4s linear infinite;
+  margin-bottom:6px;
+}
+
+header p {
+  color:#94a3b8;
+  font-size:0.83rem;
+  letter-spacing:.3px;
+}
+
+.container {
+  max-width:960px;
+  margin:0 auto;
+  padding:0 18px 60px;
+  position:relative;
+  z-index:1;
+}
+
+/* ── controls ── */
+.ctrl-card {
+  background:#1e293b;
+  border:1px solid #334155;
+  border-radius:14px;
+  padding:16px 20px;
+  margin-bottom:16px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  box-shadow:0 1px 8px rgba(0,0,0,.3);
+}
+
+input[type="text"] {
+  flex:1;
+  min-width:200px;
+  background:#0f172a;
+  border:1px solid #334155;
+  color:#e2e8f0;
+  padding:9px 14px;
+  border-radius:9px;
+  font-family:inherit;
+  font-size:0.88rem;
+  outline:none;
+  transition:border-color .2s;
+}
+input[type="text"]:focus { border-color:#6366f1; }
+
+.btn-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+button {
+  padding:9px 16px;
+  border-radius:9px;
+  border:none;
+  cursor:pointer;
+  font-family:inherit;
+  font-size:0.82rem;
+  font-weight:600;
+  transition:all .18s;
+}
+button:disabled { opacity:.35; cursor:not-allowed; transform:none!important; }
+
+.btn-sort {
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;
+  box-shadow:0 3px 12px rgba(99,102,241,.3);
+}
+.btn-sort:hover:not(:disabled) {
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  transform:translateY(-1px);
+  box-shadow:0 6px 18px rgba(99,102,241,.4);
+}
+
+.btn-rnd  { background:#1e293b; color:#94a3b8; border:1px solid #334155; }
+.btn-rnd:hover:not(:disabled)  { background:#334155; color:#e2e8f0; }
+
+.btn-step { background:#1e293b; color:#94a3b8; border:1px solid #334155; }
+.btn-step:hover:not(:disabled) { background:#334155; color:#e2e8f0; }
+
+.btn-play {
+  background:linear-gradient(135deg,#10b981,#059669);
+  color:#fff;
+  min-width:84px;
+  box-shadow:0 3px 12px rgba(16,185,129,.3);
+}
+.btn-play:hover:not(:disabled) {
+  background:linear-gradient(135deg,#059669,#047857);
+  transform:translateY(-1px);
+}
+
+.speed-wrap { display:flex; align-items:center; gap:7px; color:#94a3b8; font-size:.78rem; }
+input[type="range"] { accent-color:#6366f1; width:90px; cursor:pointer; }
+
+/* ── progress bar ── */
+.progress-track {
+  height:3px;
+  background:#1e293b;
+  border-radius:99px;
+  margin-bottom:18px;
+  overflow:hidden;
+}
+.progress-fill {
+  height:100%;
+  width:0%;
+  border-radius:99px;
+  background:linear-gradient(90deg,#6366f1,#a78bfa,#38bdf8);
+  transition:width .3s ease;
+}
+
+/* ── stats ── */
+.stats-row {
+  display:grid;
+  grid-template-columns:1fr 1fr 2fr;
+  gap:10px;
+  margin-bottom:16px;
+}
+@media(max-width:500px){ .stats-row{ grid-template-columns:1fr 1fr; } }
+
+.stat-card {
+  background:#1e293b;
+  border:1px solid #334155;
+  border-radius:12px;
+  padding:12px 16px;
+  text-align:center;
+  box-shadow:0 1px 8px rgba(0,0,0,.3);
+}
+.stat-label { font-size:.65rem; color:#64748b; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:5px; }
+.stat-value { font-size:1.5rem; font-weight:700; font-variant-numeric:tabular-nums; }
+#statCmp   { color:#fbbf24; }
+#statStep  { color:#38bdf8; }
+#statPhase { font-size:.82rem; color:#a78bfa; }
+
+/* ── phase panel ── */
+.phase-panel {
+  background:linear-gradient(135deg,#1e1b4b,#1e293b);
+  border:1px solid #4338ca;
+  border-radius:14px;
+  padding:14px 18px;
+  margin-bottom:16px;
+  display:none;
+  gap:14px;
+  align-items:flex-start;
+  animation:fadeUp .3s ease;
+}
+.phase-panel.show { display:flex; }
+
+.phase-icon { font-size:1.7rem; flex-shrink:0; line-height:1; }
+.phase-head { font-size:.82rem; font-weight:700; color:#a5b4fc; margin-bottom:4px; }
+.phase-body { font-size:.78rem; color:#94a3b8; line-height:1.55; }
+
+/* ── done banner ── */
+.done-banner {
+  background:linear-gradient(135deg,#052e16,#0f172a);
+  border:1px solid #16a34a;
+  border-radius:14px;
+  padding:22px;
+  text-align:center;
+  margin-bottom:16px;
+  display:none;
+  animation:bounceIn .6s ease;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 2px 16px rgba(16,185,129,.2);
+}
+.done-banner.show { display:block; }
+.done-banner::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(16,185,129,.12),transparent 70%);
+}
+.done-icon  { font-size:2.2rem; display:block; margin-bottom:8px; animation:bounceIn .7s .1s ease both; }
+.done-title { color:#4ade80; font-size:1.15rem; font-weight:700; margin-bottom:4px; }
+.done-sub   { color:#94a3b8; font-size:.8rem; }
+
+/* ── legend ── */
+.legend {
+  display:flex; gap:12px; flex-wrap:wrap;
+  justify-content:center;
+  margin-bottom:16px;
+}
+.legend-item { display:flex; align-items:center; gap:5px; font-size:.7rem; color:#94a3b8; }
+.ldot { width:9px; height:9px; border-radius:50%; }
+
+/* ── main viz card ── */
+.viz-card {
+  background:#1e293b;
+  border:1px solid #334155;
+  border-radius:14px;
+  padding:20px 22px;
+  margin-bottom:16px;
+  min-height:140px;
+  transition:border-color .3s;
+  box-shadow:0 1px 8px rgba(0,0,0,.3);
+}
+
+/* ── bar charts ── */
+.bars-wrap {
+  display:flex;
+  align-items:flex-end;
+  gap:6px;
+  padding:0 2px;
+}
+
+.bar-col {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  flex:1;
+  min-width:0;
+  justify-content:flex-end;
+}
+
+.bval {
+  font-size:.68rem;
+  font-weight:700;
+  transition:color .3s;
+  white-space:nowrap;
+}
+
+.bar {
+  width:100%;
+  border-radius:5px 5px 0 0;
+  transition:height .35s cubic-bezier(.34,1.56,.64,1), background .3s, box-shadow .3s;
+  min-height:6px;
+  transform-origin:bottom;
+}
+
+.bar.default  { background:linear-gradient(180deg,#334155,#1e293b); }
+.bar.winner   { background:linear-gradient(180deg,#4ade80,#15803d); box-shadow:0 0 10px rgba(22,163,74,.3); }
+.bar.loser    { background:linear-gradient(180deg,#818cf8,#4338ca); box-shadow:0 0 10px rgba(99,102,241,.3); }
+.bar.sorted   { background:linear-gradient(180deg,#34d399,#059669); box-shadow:0 0 10px rgba(5,150,105,.3); }
+.bar.comparing{ background:linear-gradient(180deg,#fbbf24,#b45309); box-shadow:0 0 16px rgba(180,83,9,.35); animation:pulse .55s ease infinite; }
+.bar.inserting{ background:linear-gradient(180deg,#f472b6,#be185d); box-shadow:0 0 16px rgba(190,24,93,.35); animation:pulse .55s ease infinite; }
+.bar.inserted { background:linear-gradient(180deg,#60a5fa,#1d4ed8); box-shadow:0 0 14px rgba(29,78,216,.3); animation:slideIn .35s ease; }
+.bar.highlight{ background:linear-gradient(180deg,#fb923c,#c2410c); box-shadow:0 0 12px rgba(194,65,12,.3); }
+.bar.straggler{ background:linear-gradient(180deg,#fcd34d,#d97706); box-shadow:0 0 10px rgba(217,119,6,.3); }
+.bar.pend0    { background:linear-gradient(180deg,#c084fc,#7c3aed); box-shadow:0 0 12px rgba(124,58,237,.3); }
+.bar.midpt    { background:linear-gradient(180deg,#e879f9,#a21caf); box-shadow:0 0 16px rgba(162,28,175,.35); animation:pulse .45s ease infinite; }
+
+.bidx { font-size:.55rem; color:#475569; }
+
+/* multi-row layout */
+.multi-rows { display:flex; flex-direction:column; gap:16px; }
+.mrow       { display:flex; align-items:center; gap:14px; }
+.mrow-label {
+  font-size:.65rem;
+  color:#64748b;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  min-width:68px;
+  text-align:right;
+}
+.mrow-bars  { display:flex; align-items:flex-end; gap:5px; flex:1; }
+
+/* ── pairs ── */
+.pairs-card {
+  background:#1e293b;
+  border:1px solid #334155;
+  border-radius:14px;
+  padding:18px 22px;
+  margin-bottom:16px;
+  display:none;
+  animation:fadeUp .3s ease;
+  box-shadow:0 1px 8px rgba(0,0,0,.3);
+}
+.pairs-card.show { display:block; }
+
+.section-label {
+  font-size:.65rem;
+  color:#64748b;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  margin-bottom:14px;
+}
+
+.pairs-grid { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+.pair-item {
+  background:#0f172a;
+  border:1px solid #334155;
+  border-radius:11px;
+  padding:10px 14px;
+  text-align:center;
+  min-width:76px;
+  transition:all .25s;
+  animation:fadeUp .3s ease;
+}
+.pair-item:hover { border-color:#6366f1; transform:translateY(-2px); box-shadow:0 4px 14px rgba(99,102,241,.25); }
+.pair-item.active { border-color:#f59e0b; box-shadow:0 0 14px rgba(245,158,11,.25); }
+
+.pair-num   { font-size:.57rem; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; }
+.pair-w     { font-size:1.15rem; font-weight:800; color:#4ade80; padding-bottom:5px; border-bottom:1px solid #1e293b; margin-bottom:5px; }
+.pair-div   { font-size:.6rem; color:#475569; margin-bottom:3px; }
+.pair-l     { font-size:1.15rem; font-weight:800; color:#818cf8; }
+
+/* ── jacobsthal / order ── */
+.jac-card {
+  background:#1e293b;
+  border:1px solid #334155;
+  border-radius:14px;
+  padding:18px 22px;
+  margin-bottom:16px;
+  display:none;
+  animation:fadeUp .3s ease;
+  box-shadow:0 1px 8px rgba(0,0,0,.3);
+}
+.jac-card.show { display:block; }
+.jac-inner { display:flex; gap:24px; flex-wrap:wrap; margin-top:14px; }
+.jac-group { flex:1; min-width:180px; }
+.jac-group-label { font-size:.6rem; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+
+.tokens { display:flex; gap:5px; flex-wrap:wrap; }
+
+.tok {
+  font-size:.75rem;
+  padding:3px 9px;
+  border-radius:5px;
+  border:1px solid;
+  transition:all .25s;
+}
+.tok.jac-tok       { background:#0f172a; border-color:#334155; color:#64748b; }
+.tok.jac-tok.used  { background:#2e1065; border-color:#7c3aed; color:#a78bfa; }
+.tok.ord-tok       { background:#0f172a; border-color:#334155; color:#64748b; }
+.tok.ord-tok.done  { background:#052e16; border-color:#16a34a; color:#4ade80; }
+.tok.ord-tok.cur   { background:#4a044e; border-color:#db2777; color:#f472b6; animation:pulse .55s ease infinite; }
+
+/* ── log ── */
+.log-card {
+  background:#1e293b;
+  border:1px solid #334155;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 1px 8px rgba(0,0,0,.3);
+}
+.log-head {
+  padding:10px 18px;
+  border-bottom:1px solid #334155;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:.65rem;
+  color:#64748b;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+}
+.log-count { color:#64748b; }
+.log-body  {
+  padding:10px;
+  max-height:170px;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:#334155 transparent;
+}
+.log-entry {
+  font-size:.71rem;
+  padding:3px 8px;
+  border-radius:4px;
+  line-height:1.6;
+  animation:fadeUp .15s ease;
+  color:#94a3b8;
+}
+.log-entry:nth-child(odd) { background:#0f172a; }
+
+.tag         { font-weight:700; margin-right:5px; }
+.tag-pair    { color:#fbbf24; }
+.tag-sort    { color:#4ade80; }
+.tag-remap   { color:#818cf8; }
+.tag-insert  { color:#f472b6; }
+.tag-jacob   { color:#fb923c; }
+.tag-done    { color:#34d399; }
+.tag-compare { color:#38bdf8; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ford-Johnson Merge-Insert Sort</h1>
+  <p>Step-by-step animated visualization · mirrors your C++ implementation exactly</p>
+</header>
+
+<div class="container">
+
+  <!-- Controls -->
+  <div class="ctrl-card">
+    <input type="text" id="inputArr" value="5 3 8 1 9 2 7 4 6" placeholder="Numbers separated by spaces">
+    <div class="btn-row">
+      <button class="btn-sort" onclick="startViz()">▶ Sort</button>
+      <button class="btn-rnd"  onclick="randomize()">⟳ Random</button>
+      <button class="btn-step" id="stepBtn" onclick="doStep()" disabled>→ Step</button>
+      <button class="btn-play" id="playBtn" onclick="togglePlay()" disabled>▶ Play</button>
+    </div>
+    <div class="speed-wrap">
+      <span>Speed</span>
+      <input type="range" id="speed" min="100" max="2000" value="700" step="100">
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Comparisons</div><div class="stat-value" id="statCmp">0</div></div>
+    <div class="stat-card"><div class="stat-label">Step</div><div class="stat-value" id="statStep">0</div></div>
+    <div class="stat-card"><div class="stat-label">Current phase</div><div class="stat-value" id="statPhase">—</div></div>
+  </div>
+
+  <!-- Phase explanation -->
+  <div class="phase-panel" id="phasePanel">
+    <div class="phase-icon" id="phaseIcon"></div>
+    <div>
+      <div class="phase-head" id="phaseHead"></div>
+      <div class="phase-body" id="phaseBody"></div>
+    </div>
+  </div>
+
+  <!-- Done banner -->
+  <div class="done-banner" id="doneBanner">
+    <span class="done-icon">🏆</span>
+    <div class="done-title">Sorted!</div>
+    <div class="done-sub" id="doneSub"></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="ldot" style="background:#4ade80"></div>Winner</div>
+    <div class="legend-item"><div class="ldot" style="background:#818cf8"></div>Loser / Pend</div>
+    <div class="legend-item"><div class="ldot" style="background:#fbbf24"></div>Comparing</div>
+    <div class="legend-item"><div class="ldot" style="background:#34d399"></div>Sorted</div>
+    <div class="legend-item"><div class="ldot" style="background:#f472b6"></div>Inserting</div>
+    <div class="legend-item"><div class="ldot" style="background:#60a5fa"></div>Just inserted</div>
+    <div class="legend-item"><div class="ldot" style="background:#fb923c"></div>Search range</div>
+    <div class="legend-item"><div class="ldot" style="background:#fcd34d"></div>Straggler</div>
+  </div>
+
+  <!-- Main viz -->
+  <div class="viz-card" id="vizCard">
+    <div id="vizContent">
+      <div style="text-align:center;color:#475569;padding:54px 0;font-size:.88rem">
+        Enter numbers above and press <strong style="color:#818cf8">Sort</strong> to begin.
+      </div>
+    </div>
+  </div>
+
+  <!-- Pairs -->
+  <div class="pairs-card" id="pairsCard">
+    <div class="section-label">Pairs — winner (green) over loser (purple)</div>
+    <div class="pairs-grid" id="pairsGrid"></div>
+  </div>
+
+  <!-- Jacobsthal + insertion order -->
+  <div class="jac-card" id="jacCard">
+    <div class="section-label">Jacobsthal-guided insertion</div>
+    <div class="jac-inner">
+      <div class="jac-group">
+        <div class="jac-group-label">Jacobsthal sequence</div>
+        <div class="tokens" id="jacTokens"></div>
+      </div>
+      <div class="jac-group">
+        <div class="jac-group-label">Insertion order</div>
+        <div class="tokens" id="ordTokens"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="log-card">
+    <div class="log-head">
+      <span>Event log</span>
+      <span class="log-count" id="logCount">0 events</span>
+    </div>
+    <div class="log-body" id="logBody"></div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  Jacobsthal utilities
+// ─────────────────────────────────────────────────────────────
+function jacSeq(len) {
+  const j = [];
+  let j0 = 0, j1 = 1, count = 0;
+  while (count <= len) {
+    const nxt = j1 + 2 * j0;
+    j.push(nxt);
+    j0 = j1; j1 = nxt; count++;
+    if (nxt > len) break;
+  }
+  return j;
+}
+
+function buildInsertOrder(pendSize) {
+  const jseq = jacSeq(pendSize);
+  const order = [];
+  let start = 1;
+  for (let k = 0; k < jseq.length; k++) {
+    const end = Math.min(jseq[k], pendSize);
+    for (let idx = end; idx > start; idx--) order.push(idx);
+    start = jseq[k];
+    if (start >= pendSize) break;
+  }
+  return order;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Step recorder  (mirrors C++ exactly)
+// ─────────────────────────────────────────────────────────────
+let steps = [];
+let comparisons = 0;
+
+function rec(type, payload) { steps.push({ type, cmp: comparisons, ...payload }); }
+
+function fordJohnsonRecord(arr, depth) {
+  if (arr.length <= 1) return;
+  if (arr.length === 2) {
+    const snap = [...arr];
+    comparisons++;
+    rec('compare', { arr: snap, i: 0, j: 1, depth });
+    if (arr[0] > arr[1]) [arr[0], arr[1]] = [arr[1], arr[0]];
+    rec('swapped', { arr: [...arr], depth });
+    return;
+  }
+
+  const odd = arr.length % 2 !== 0;
+  const main_chain = [], pend = [];
+
+  for (let i = 0; i + 1 < arr.length; i += 2) {
+    comparisons++;
+    rec('pair', { arr: [...arr], i, j: i + 1, depth });
+    if (arr[i] > arr[i + 1]) { main_chain.push(arr[i]);   pend.push(arr[i+1]); }
+    else                      { main_chain.push(arr[i+1]); pend.push(arr[i]); }
+  }
+  if (odd) pend.push(arr[arr.length - 1]);
+  rec('pairs_done', { main: [...main_chain], pend: [...pend], depth, odd });
+
+  const original_main = [...main_chain];
+  fordJohnsonRecord(main_chain, depth + 1);
+  rec('main_sorted', { main: [...main_chain], pend: [...pend], depth });
+
+  const new_pend = new Array(main_chain.length);
+  const used = new Array(main_chain.length).fill(false);
+  for (let i = 0; i < main_chain.length; i++) {
+    for (let j = 0; j < original_main.length; j++) {
+      if (!used[j] && original_main[j] === main_chain[i]) {
+        new_pend[i] = pend[j]; used[j] = true; break;
+      }
+    }
+  }
+  if (odd) new_pend.push(pend[pend.length - 1]);
+  rec('remap_done', { main: [...main_chain], pend: [...new_pend], depth, odd });
+
+  if (new_pend.length === 0) { arr.splice(0, arr.length, ...main_chain); return; }
+
+  const winners = [...main_chain];
+  main_chain.unshift(new_pend[0]);
+  rec('insert_p0', { main: [...main_chain], pend: [...new_pend], depth });
+
+  if (new_pend.length > 1) {
+    const n = new_pend.length;
+    const order = buildInsertOrder(n);
+    const jseq  = jacSeq(n);
+    rec('insert_order', { order: [...order], jseq: [...jseq], main: [...main_chain], depth });
+
+    let high = 3;
+    for (let k = 0; k < order.length; k++) {
+      if (k > 0 && order[k] > order[k - 1]) high = high * 2 + 1;
+      const idx = order[k] - 1;
+      const wp  = idx < winners.length ? main_chain.indexOf(winners[idx]) + 1 : main_chain.length;
+      const bound = Math.min(high, wp);
+      let left = 0, right = bound;
+      rec('bs_start', { main: [...main_chain], target: new_pend[idx], left, right, depth, pendIdx: idx, orderStep: k });
+      while (left < right) {
+        const mid = left + Math.floor((right - left) / 2);
+        comparisons++;
+        rec('bs_mid', { main: [...main_chain], target: new_pend[idx], left, right, mid, depth });
+        if (main_chain[mid] < new_pend[idx]) left = mid + 1;
+        else right = mid;
+      }
+      main_chain.splice(left, 0, new_pend[idx]);
+      rec('inserted', { main: [...main_chain], pos: left, target: new_pend[idx], depth, orderStep: k });
+    }
+  }
+  arr.splice(0, arr.length, ...main_chain);
+  rec('level_done', { arr: [...arr], depth });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Phase descriptions
+// ─────────────────────────────────────────────────────────────
+const PHASES = {
+  compare:      ['⚖️', 'Comparing a pair',
+    'Two adjacent elements are compared to decide the winner (larger) and loser (smaller). Ford-Johnson pairs up all elements this way as its first step.'],
+  swapped:      ['🔄', 'Pair sorted',
+    'The pair is in order. The larger element (green) is the winner and moves to the main chain; the smaller (purple) becomes a pending element for later.'],
+  pair:         ['🔍', 'Pairing elements',
+    'Comparing two elements to classify them. The winner joins the main chain; the loser waits in the pending (pend) sequence.'],
+  pairs_done:   ['✂️', 'All pairs formed',
+    'The input has been split into winners (green, main chain) and losers (purple, pending). The main chain will be sorted recursively.'],
+  main_sorted:  ['📊', 'Main chain sorted',
+    'The winners are recursively sorted. Now all pending elements must be inserted into the sorted main chain in the optimal order.'],
+  remap_done:   ['🗺️', 'Pending sequence remapped',
+    'Each pending element is re-associated with its corresponding sorted winner, preserving the pairing relationship after recursive reordering.'],
+  insert_p0:    ['🎯', 'Free insertion — pend[0]',
+    'pend[0] is inserted at the front at zero cost — it is guaranteed ≤ main[0] because it lost to the winner that was paired with the smallest main element.'],
+  insert_order: ['🧮', 'Jacobsthal insertion order',
+    'The Jacobsthal sequence dictates the optimal order to insert pending elements. This minimises the worst-case comparisons by keeping the binary-search upper bound small.'],
+  bs_start:     ['🔎', 'Binary search begins',
+    'Searching for the correct sorted position. Orange bars show the active search window. The upper bound is carefully limited by the Jacobsthal strategy.'],
+  bs_mid:       ['🔎', 'Binary search — pivot',
+    'The yellow bar is the current midpoint. Comparing the target against it to halve the remaining search range.'],
+  inserted:     ['✅', 'Element placed',
+    'Binary search found the correct sorted position. The blue bar shows where the element landed. The main chain remains fully sorted.'],
+  level_done:   ['🎉', 'Level complete',
+    'This recursion depth is fully sorted. The result propagates up to the parent call, building the final sorted array bottom-up.'],
+};
+
+// ─────────────────────────────────────────────────────────────
+//  Bar rendering helpers
+// ─────────────────────────────────────────────────────────────
+let maxVal = 1;
+
+const COLORS = {
+  winner:'#4ade80', loser:'#818cf8', sorted:'#34d399',
+  comparing:'#fbbf24', inserting:'#f472b6', inserted:'#60a5fa',
+  highlight:'#fb923c', straggler:'#fcd34d', pend0:'#c084fc',
+  midpt:'#e879f9', default:'#64748b'
+};
+
+function barsHTML(arr, hl, h = 150) {
+  const gap = Math.max(3, 8 - Math.floor(arr.length / 3));
+  const minW = Math.max(18, Math.min(60, Math.floor(880 / arr.length) - gap - 2));
+  let s = `<div class="bars-wrap" style="height:${h}px;gap:${gap}px">`;
+  for (let i = 0; i < arr.length; i++) {
+    const cls  = (hl && hl[i]) || 'default';
+    const col  = COLORS[cls] || '#2a3a52';
+    const barH = Math.max(7, Math.round((arr[i] / maxVal) * (h - 30)));
+    s += `<div class="bar-col" style="min-width:${minW}px;max-width:${minW+16}px">
+      <div class="bval" style="color:${col}">${arr[i]}</div>
+      <div class="bar ${cls}" style="height:${barH}px"></div>
+      <div class="bidx">${i}</div>
+    </div>`;
+  }
+  return s + '</div>';
+}
+
+function miniRowsHTML(rows) {
+  let s = '<div class="multi-rows">';
+  for (const r of rows) {
+    const h   = r.h || 80;
+    const gap = Math.max(2, 6 - Math.floor(r.arr.length / 4));
+    const minW = Math.max(14, Math.min(46, Math.floor(700 / r.arr.length) - gap - 2));
+    s += `<div class="mrow"><div class="mrow-label">${r.label}</div>
+      <div class="mrow-bars" style="height:${h}px;gap:${gap}px">`;
+    for (let i = 0; i < r.arr.length; i++) {
+      const cls  = (r.hl && r.hl[i]) || 'default';
+      const col  = COLORS[cls] || '#2a3a52';
+      const barH = Math.max(5, Math.round((r.arr[i] / maxVal) * (h - 22)));
+      s += `<div class="bar-col" style="min-width:${minW}px;max-width:${minW+12}px">
+        <div class="bval" style="font-size:.62rem;color:${col}">${r.arr[i]}</div>
+        <div class="bar ${cls}" style="height:${barH}px"></div>
+      </div>`;
+    }
+    s += '</div></div>';
+  }
+  return s + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────────────────────
+let stepIdx  = 0;
+let playing  = false;
+let playTimer = null;
+let logLines  = [];
+let _ordLen   = 0;
+
+function spd() { return 2100 - parseInt(document.getElementById('speed').value); }
+
+function setPhase(type) {
+  const [icon, head, body] = PHASES[type] || ['📌', type, ''];
+  document.getElementById('phaseIcon').textContent = icon;
+  document.getElementById('phaseHead').textContent = head;
+  document.getElementById('phaseBody').textContent = body;
+  document.getElementById('phasePanel').className  = 'phase-panel show';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Render a single step
+// ─────────────────────────────────────────────────────────────
+function renderStep(s) {
+  setPhase(s.type);
+  let html = '', phase = '';
+
+  switch (s.type) {
+    case 'compare': {
+      html  = barsHTML(s.arr, { [s.i]:'comparing', [s.j]:'comparing' });
+      phase = `Comparing ${s.arr[s.i]} vs ${s.arr[s.j]}`;
+      log(`<span class="tag tag-compare">[CMP]</span> ${s.arr[s.i]} vs ${s.arr[s.j]} at depth ${s.depth}`);
+      break;
+    }
+    case 'swapped': {
+      html  = barsHTML(s.arr, { 0:'winner', 1:'loser' });
+      phase = 'Pair ordered';
+      log(`<span class="tag tag-sort">[SORT]</span> Pair → [${s.arr.join(', ')}]`);
+      break;
+    }
+    case 'pair': {
+      html  = barsHTML(s.arr, { [s.i]:'comparing', [s.j]:'comparing' });
+      phase = `Pairing ${s.arr[s.i]} & ${s.arr[s.j]}`;
+      log(`<span class="tag tag-pair">[PAIR]</span> ${s.arr[s.i]} vs ${s.arr[s.j]} (depth ${s.depth})`);
+      break;
+    }
+    case 'pairs_done': {
+      const mhl = {}, phl = {};
+      s.main.forEach((_,i) => mhl[i] = 'winner');
+      s.pend.forEach((_,i) => phl[i] = (s.odd && i===s.pend.length-1) ? 'straggler' : 'loser');
+      html  = miniRowsHTML([{label:'main',arr:s.main,hl:mhl},{label:'pend',arr:s.pend,hl:phl}]);
+      phase = 'Pairs complete';
+      showPairs(s.main, s.pend, s.odd);
+      log(`<span class="tag tag-pair">[PAIR]</span> main=[${s.main}]  pend=[${s.pend}]${s.odd?' +straggler':''}`);
+      break;
+    }
+    case 'main_sorted': {
+      const mhl = {}, phl = {};
+      s.main.forEach((_,i) => mhl[i] = 'sorted');
+      s.pend.forEach((_,i) => phl[i] = 'loser');
+      html  = miniRowsHTML([{label:'main',arr:s.main,hl:mhl},{label:'pend',arr:s.pend,hl:phl}]);
+      phase = 'Main chain sorted';
+      hidePairs();
+      log(`<span class="tag tag-sort">[SORT]</span> Recursion done → main=[${s.main}]`);
+      break;
+    }
+    case 'remap_done': {
+      const mhl = {}, phl = {};
+      s.main.forEach((_,i) => mhl[i] = 'sorted');
+      s.pend.forEach((_,i) => phl[i] = (s.odd && i===s.pend.length-1) ? 'straggler' : 'loser');
+      html  = miniRowsHTML([{label:'main',arr:s.main,hl:mhl},{label:'pend',arr:s.pend,hl:phl}]);
+      phase = 'Pend remapped';
+      log(`<span class="tag tag-remap">[REMAP]</span> pend → [${s.pend}]`);
+      break;
+    }
+    case 'insert_p0': {
+      const mhl = { 0:'pend0' };
+      s.main.slice(1).forEach((_,i) => { mhl[i+1] = 'sorted'; });
+      html  = barsHTML(s.main, mhl);
+      phase = `Free insert pend[0]=${s.pend[0]}`;
+      log(`<span class="tag tag-insert">[INS]</span> pend[0]=${s.pend[0]} → front (0 comparisons)`);
+      break;
+    }
+    case 'insert_order': {
+      html  = barsHTML(s.main, {});
+      phase = 'Jacobsthal order ready';
+      showJac(s.jseq, s.order);
+      log(`<span class="tag tag-jacob">[JAC]</span> seq=[${s.jseq}]  order=[${s.order}]`);
+      break;
+    }
+    case 'bs_start': {
+      const mhl = {};
+      for (let i = s.left; i < s.right; i++) mhl[i] = 'highlight';
+      html  = barsHTML(s.main, mhl);
+      phase = `Binary search for ${s.target}`;
+      advOrd(s.orderStep);
+      log(`<span class="tag tag-compare">[BIN]</span> Insert pend[${s.pendIdx}]=${s.target} → search [0..${s.right})`);
+      break;
+    }
+    case 'bs_mid': {
+      const mhl = {};
+      for (let i = s.left; i < s.right; i++) mhl[i] = 'highlight';
+      mhl[s.mid] = 'midpt';
+      html  = barsHTML(s.main, mhl);
+      phase = `Pivot ${s.main[s.mid]} ${s.main[s.mid] < s.target ? '< target → right' : '≥ target → left'}`;
+      log(`<span class="tag tag-compare">[BIN]</span> mid[${s.mid}]=${s.main[s.mid]} vs ${s.target} → ${s.main[s.mid] < s.target ? 'go right ▶' : 'go left ◀'}`);
+      break;
+    }
+    case 'inserted': {
+      const mhl = { [s.pos]:'inserted' };
+      s.main.forEach((_,i) => { if (i !== s.pos) mhl[i] = 'sorted'; });
+      html  = barsHTML(s.main, mhl);
+      phase = `${s.target} inserted at pos ${s.pos}`;
+      log(`<span class="tag tag-insert">[INS]</span> ${s.target} → pos ${s.pos}  [${s.main}]`);
+      break;
+    }
+    case 'level_done': {
+      const mhl = {};
+      s.arr.forEach((_,i) => mhl[i] = 'sorted');
+      html  = barsHTML(s.arr, mhl);
+      phase = `Depth ${s.depth} complete`;
+      hideJac(); hidePairs();
+      log(`<span class="tag tag-done">[DONE]</span> Level ${s.depth} → [${s.arr}]`);
+      break;
+    }
+  }
+
+  document.getElementById('vizContent').innerHTML = html;
+  document.getElementById('statCmp').textContent   = s.cmp;
+  document.getElementById('statStep').textContent  = stepIdx + 1;
+  document.getElementById('statPhase').textContent = phase;
+  document.getElementById('progFill').style.width  = ((stepIdx + 1) / steps.length * 100).toFixed(1) + '%';
+
+  if (stepIdx === steps.length - 1) {
+    document.getElementById('doneBanner').className = 'done-banner show';
+    document.getElementById('doneSub').textContent  =
+      `${s.cmp} comparisons · ${steps.length} steps · optimal Ford-Johnson sort`;
+  } else {
+    document.getElementById('doneBanner').className = 'done-banner';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Pairs display
+// ─────────────────────────────────────────────────────────────
+function showPairs(main, pend, odd) {
+  let html = '';
+  for (let i = 0; i < main.length; i++) {
+    html += `<div class="pair-item">
+      <div class="pair-num">pair ${i+1}</div>
+      <div class="pair-w">${main[i]}</div>
+      <div class="pair-div">↑ win  lose ↓</div>
+      <div class="pair-l">${pend[i] !== undefined ? pend[i] : '—'}</div>
+    </div>`;
+  }
+  if (odd && pend.length > main.length) {
+    html += `<div class="pair-item" style="border-color:#f59e0b">
+      <div class="pair-num">straggler</div>
+      <div class="pair-w" style="color:#fcd34d">—</div>
+      <div class="pair-div">unpaired</div>
+      <div class="pair-l" style="color:#fcd34d">${pend[pend.length-1]}</div>
+    </div>`;
+  }
+  document.getElementById('pairsGrid').innerHTML = html;
+  document.getElementById('pairsCard').className = 'pairs-card show';
+}
+function hidePairs() { document.getElementById('pairsCard').className = 'pairs-card'; }
+
+// ─────────────────────────────────────────────────────────────
+//  Jacobsthal display
+// ─────────────────────────────────────────────────────────────
+function showJac(jseq, order) {
+  _ordLen = order.length;
+  document.getElementById('jacTokens').innerHTML =
+    jseq.map(v => `<span class="tok jac-tok">${v}</span>`).join('');
+  document.getElementById('ordTokens').innerHTML =
+    order.map((v,i) => `<span class="tok ord-tok" id="ot${i}">pend[${v-1}]</span>`).join('');
+  document.getElementById('jacCard').className = 'jac-card show';
+}
+function advOrd(step) {
+  for (let i = 0; i < _ordLen; i++) {
+    const el = document.getElementById(`ot${i}`);
+    if (!el) continue;
+    el.className = 'tok ord-tok' + (i < step ? ' done' : i === step ? ' cur' : '');
+  }
+}
+function hideJac() {
+  document.getElementById('jacCard').className = 'jac-card';
+  _ordLen = 0;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Log
+// ─────────────────────────────────────────────────────────────
+function log(msg) {
+  logLines.push(msg);
+  const body = document.getElementById('logBody');
+  body.innerHTML = logLines.map(l => `<div class="log-entry">${l}</div>`).join('');
+  body.scrollTop = body.scrollHeight;
+  document.getElementById('logCount').textContent = logLines.length + ' events';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Controls
+// ─────────────────────────────────────────────────────────────
+function startViz() {
+  const nums = document.getElementById('inputArr').value.trim().split(/\s+/).map(Number).filter(n => !isNaN(n) && isFinite(n));
+  if (nums.length < 2) { alert('Enter at least 2 numbers.'); return; }
+
+  steps = []; comparisons = 0; stepIdx = 0;
+  logLines = []; playing = false; clearInterval(playTimer);
+
+  document.getElementById('doneBanner').className  = 'done-banner';
+  document.getElementById('phasePanel').className  = 'phase-panel';
+  document.getElementById('logBody').innerHTML     = '';
+  document.getElementById('logCount').textContent  = '0 events';
+  document.getElementById('progFill').style.width  = '0%';
+  document.getElementById('statCmp').textContent   = '0';
+  document.getElementById('statStep').textContent  = '0';
+  document.getElementById('statPhase').textContent = 'Ready';
+  hidePairs(); hideJac();
+
+  maxVal = Math.max(...nums);
+  const arr = [...nums];
+  fordJohnsonRecord(arr, 0);
+
+  document.getElementById('vizContent').innerHTML  = barsHTML(nums, {});
+  document.getElementById('stepBtn').disabled      = false;
+  document.getElementById('playBtn').disabled      = false;
+  document.getElementById('playBtn').textContent   = '▶ Play';
+
+  log(`<span class="tag tag-done">[INIT]</span> Input: [${nums.join(', ')}] — ${steps.length} steps recorded`);
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  try {
+    renderStep(steps[stepIdx]);
+  } catch (e) {
+    log(`<span class="tag tag-compare">[ERR]</span> step ${stepIdx} (${steps[stepIdx].type}): ${e.message}`);
+  }
+  stepIdx++;
+  if (stepIdx >= steps.length) { document.getElementById('stepBtn').disabled = true; stopPlay(); }
+}
+
+function togglePlay() { playing ? stopPlay() : startPlay(); }
+
+function startPlay() {
+  if (stepIdx >= steps.length) return;
+  playing = true;
+  document.getElementById('playBtn').textContent = '⏸ Pause';
+  playTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { stopPlay(); return; }
+    doStep();
+  }, spd());
+}
+
+function stopPlay() {
+  playing = false;
+  clearInterval(playTimer);
+  document.getElementById('playBtn').textContent = '▶ Play';
+}
+
+document.getElementById('speed').addEventListener('input', () => { if (playing) { stopPlay(); startPlay(); } });
+
+function randomize() {
+  const n = Math.floor(Math.random() * 10) + 5;
+  const pool = Array.from({length:30}, (_,i) => i + 1);
+  const vals = [];
+  for (let i = 0; i < n; i++) { const k = Math.floor(Math.random()*pool.length); vals.push(pool.splice(k,1)[0]); }
+  document.getElementById('inputArr').value = vals.join(' ');
+}
+</script>
+</body>
+</html>

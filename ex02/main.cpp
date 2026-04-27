@@ -62,7 +62,6 @@ int main(int argc, char **argv)
     std::cout << "Number of comparisons (deque)  : " << comparisonsD << std::endl;
     return (0);
 }
-
 /*
     ## the example :
 

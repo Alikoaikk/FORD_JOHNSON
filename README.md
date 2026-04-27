@@ -1,6 +1,9 @@
 <div align="center">
 
-# CPP09 — STL Containers & Ford-Johnson Sort
+<!-- Replace the line below with your generated image -->
+<!-- <img src="./banner.png" alt="CPP09 Banner" width="800"/> -->
+
+# CPP09 — STL Containers & Ford-Johnson Sort 🔢
 
 **42 School — C++ Module 09**
 
@@ -17,22 +20,22 @@
 
 ---
 
-## Table of Contents
+## 📚 Table of Contents
 
-- [Overview](#overview)
-- [Project Structure](#project-structure)
-- [Exercise 00 — Bitcoin Exchange](#exercise-00--bitcoin-exchange)
-- [Exercise 01 — Reverse Polish Notation](#exercise-01--reverse-polish-notation)
-- [Exercise 02 — PmergeMe (Ford-Johnson)](#exercise-02--pmergeme-ford-johnson)
+- [Overview](#-overview)
+- [Project Structure](#-project-structure)
+- [Exercise 00 — Bitcoin Exchange](#-exercise-00--bitcoin-exchange)
+- [Exercise 01 — Reverse Polish Notation](#-exercise-01--reverse-polish-notation)
+- [Exercise 02 — PmergeMe (Ford-Johnson)](#-exercise-02--pmergeme-ford-johnson)
   - [Algorithm Deep Dive](#algorithm-deep-dive)
   - [Jacobsthal Sequence](#jacobsthal-sequence)
   - [Worked Example](#worked-example)
-- [Build Instructions](#build-instructions)
-- [Resources](#resources)
+- [Build Instructions](#️-build-instructions)
+- [Resources](#-resources)
 
 ---
 
-## Overview
+## 🧭 Overview
 
 CPP09 is the final C++ module in the 42 school curriculum's core track. It applies three different STL containers to three distinct algorithmic problems, scaling from a practical data-lookup tool (ex00) through a classic stack-based evaluator (ex01) to a full implementation of one of the most theoretically significant sorting algorithms ever designed (ex02).
 
@@ -46,7 +49,7 @@ All code is written in **C++98**, using only the standard library.
 
 ---
 
-## Project Structure
+## 🗂 Project Structure
 
 ```
 CPP09/
@@ -81,7 +84,7 @@ CPP09/
 
 ---
 
-## Exercise 00 — Bitcoin Exchange
+## 💰 Exercise 00 — Bitcoin Exchange
 
 `btc` evaluates how much a given amount of Bitcoin was worth on a given historical date. It loads a CSV database of BTC/USD exchange rates and, for each input line, finds the rate on (or just before) the queried date and prints the result.
 
@@ -133,7 +136,7 @@ Error: bad input => 2001-42-42
 
 ---
 
-## Exercise 01 — Reverse Polish Notation
+## 🧮 Exercise 01 — Reverse Polish Notation
 
 RPN (postfix notation) places operators after their operands: `3 + 4` becomes `3 4 +`, and `(3 + 4) * 2` becomes `3 4 + 2 *`. There is no operator precedence ambiguity and no parentheses — evaluation is unambiguous by processing tokens left to right with a stack.
 
@@ -151,10 +154,8 @@ Token   Stack
   1     [63, 1]
   -     [62]        ← 63 - 1
   1     [62, 1]
-  +     [60]        ← 62 + 1 ... wait: 62 + 1 = 63? No: result is 60
+  +     [63]        ← 62 + 1
 ```
-
-> Recalc: 8×9=72, 72−9=63, 63−1=62, 62+1=63… subject says 60. Use `7 7 * 7 -` → `42` as a clean verified example.
 
 **Usage:**
 
@@ -167,7 +168,7 @@ cd ex01 && make
 
 ---
 
-## Exercise 02 — PmergeMe (Ford-Johnson)
+## 🔃 Exercise 02 — PmergeMe (Ford-Johnson)
 
 PmergeMe sorts a sequence of positive integers using the **Ford-Johnson algorithm** (merge-insertion sort). Published by Lester Ford Jr. and Selmer Johnson in 1959, it achieves the fewest worst-case comparisons of any known general-purpose comparison sort — closer to the information-theoretic lower bound (`⌈log₂(n!)⌉`) than quicksort, mergesort, or any other practical algorithm.
 
@@ -211,7 +212,7 @@ Number of comparisons (vector) : 66
 Number of comparisons (deque)  : 66
 ```
 
-> For 21 elements, the theoretical minimum is 65 comparisons. This implementation achieves 66 — one above optimal.
+> 🎯 For 21 elements, the theoretical minimum is 65 comparisons. This implementation achieves 66 — one above optimal.
 
 ---
 
@@ -225,7 +226,7 @@ The Ford-Johnson algorithm sorts *n* elements in at most `t(n)` comparisons, mat
 | 10 | 22 | 22 |
 | 21 | 66 | 65 |
 
-**Phase 1 — Pair and compare**
+**⚙️ Phase 1 — Pair and compare**
 
 Adjacent elements are grouped into pairs. Each pair costs 1 comparison, producing a **winner** (larger) and a **loser**. An odd-length input leaves a **straggler** with no partner, held aside until the final insertion phase.
 
@@ -236,7 +237,7 @@ main_chain = [9, 7, 5]
 pend       = [3, 1, 2]
 ```
 
-**Phase 2 — Recursively sort the main chain**
+**♻️ Phase 2 — Recursively sort the main chain**
 
 `fordJohnson` recurses on `main_chain` until 1 or 2 elements remain. Sorting *n/2* elements costs far fewer comparisons than sorting *n* directly.
 
@@ -244,7 +245,7 @@ pend       = [3, 1, 2]
 main_chain [9, 7, 5]  →  sorted: [5, 7, 9]
 ```
 
-**Phase 3 — Remap pend**
+**🔗 Phase 3 — Remap pend**
 
 After recursion reorders `main_chain`, each loser in `pend` must follow its original winner to its new position, so the pairing invariant is preserved.
 
@@ -253,7 +254,7 @@ original_main = [9, 7, 5]  →  sorted main = [5, 7, 9]
 original pend = [3, 1, 2]  →  remapped     = [2, 1, 3]
 ```
 
-**Phase 4 — Insert pend\[0\] for free**
+**🆓 Phase 4 — Insert pend\[0\] for free**
 
 The loser of the smallest-winner pair is always ≤ `main_chain[0]`. It is prepended with **zero comparisons**.
 
@@ -261,7 +262,7 @@ The loser of the smallest-winner pair is always ≤ `main_chain[0]`. It is prepe
 pend[0] = 2  →  main_chain = [2, 5, 7, 9]
 ```
 
-**Phase 5 — Insert remaining pend in Jacobsthal order**
+**🔍 Phase 5 — Insert remaining pend in Jacobsthal order**
 
 The remaining pend elements are inserted using a **bounded binary search**. The key insight is the *order* of insertions: by following the Jacobsthal index sequence, each binary search is bounded to at most `2^k − 1` positions. The upper bound is further tightened to the position of each element's paired winner (the loser is always ≤ its winner, so we never search past it).
 
@@ -320,7 +321,7 @@ Result: [1, 2, 3, 4, 5, 6, 7, 8, 9] ✓
 
 ---
 
-## Build Instructions
+## 🛠️ Build Instructions
 
 ```bash
 # Exercise 00
@@ -338,14 +339,14 @@ Compiler flags: `-Wall -Wextra -Werror -std=c++98`
 
 ---
 
-## Resources
+## 📖 Resources
 
 - [Wikipedia — Merge-insertion sort](https://en.wikipedia.org/wiki/Merge-insertion_sort)
 - [Wikipedia — Jacobsthal number](https://en.wikipedia.org/wiki/Jacobsthal_number)
 - [Wikipedia — Reverse Polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
 - [DEV.to — Human explanation and step-by-step visualisation of the Ford-Johnson algorithm](https://dev.to/emuminov/human-explanation-and-step-by-step-visualisation-of-the-ford-johnson-algorithm-5g91)
 - [Medium — Ford-Johnson Algorithm: Merge-Insertion](https://medium.com/@mohammad.ali.ibrahim.525/ford-johnson-algorithm-merge-insertion-4b024f0c3d42)
-- [Medium — CPP09 Ford-Johnson](https://medium.com/@toukmati2000/cpp09-ford-johnson-algorithm-e6ad43288d4b)
+- [Medium — CPP09 Ford-Johnson](https://medium.com/@toukmali2000/cpp09-ford-johnson-algorithm-e6ad43288d4b)
 - *The Art of Computer Programming, Vol. 3: Sorting and Searching* — Donald E. Knuth (Section 5.3.1)
 
 ---

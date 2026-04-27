@@ -351,5 +351,5 @@ Compiler flags: `-Wall -Wextra -Werror -std=c++98`
 ---
 
 <div align="center">
-<sub>Made at 42 by <a href="https://github.com/koaik">akoaik</a></sub>
+<sub>Made at 42 by <a href="https://github.com/alikoaikk">akoaik</a></sub>
 </div>
